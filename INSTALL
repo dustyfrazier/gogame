@@ -1,0 +1,64 @@
+Installation instructions for Gongo:
+
+1) Install the "go" command. 
+
+Instructions: http://golang.org/doc/install.html
+
+(I have tried gccgo but not recently. These
+instructions are for the regular Go compiler.)
+
+2) Make sure that $GOPATH is set somewhere reasonable.
+
+mkdir go
+cd go
+export GOPATH=`pwd`
+
+3) download Gongo
+
+go get github.com/skybrian/Gongo
+
+This compiles and installs the library in $GOPATH/pkg
+
+4) Run tests
+
+cd src/github.com/skybrian/Gongo
+go test
+
+5) Install binaries
+
+go install ./gongo ./gongo-benchmark
+
+6) Try out the benchmark
+
+$GOPATH/bin/gongo-benchmark
+
+The "gongo-benchmark" program plays games against itself out to a given
+number of moves. It's useful mostly for performance testing.
+
+7) Install GoGui
+
+http://gogui.sourceforge.net/
+
+The "gongo" program is a Go player that speaks the GTP protocol. It's
+possible to run it directly, but better to use a user interface such as
+GoGui.
+
+8) Configure GoGui to use Gongo
+
+In GoGui, attach the Gongo program. Select:
+
+   Program -> New Program... 
+
+Then enter the full path to the "gongo" executable and the number of playouts
+wanted. For example, here's how I run it:
+
+  /Users/skybrian/go/bin/gongo 10000
+
+9) Play some games
+
+You can play games against Gongo or have it play itself. To have Gongo play
+itself on a 9x9 board:
+
+Game -> New Game
+Game -> Board Size -> 9
+Game -> Computer Color -> Both

@@ -1,0 +1,409 @@
+6prof -p 39307 -t 10 main
+
+100 samples (avg 1 threads)
+ 52.00%	gongo·*board·markSurroundedChain
+  8.00%	gongo·*board·makeMove
+  8.00%	gongo·*board·playRandomGame
+  8.00%	gongo·*board·wouldFillEye
+  6.00%	dodiv
+  4.00%	gongo·*robot·findWins
+  3.00%	gongo·*board·capture
+  3.00%	rand·*rngSource·Int63
+  3.00%	syscall·Syscall
+  1.00%	_modv
+  1.00%	gongo·*board·hasLiberties
+  1.00%	rand·*Rand·Int63
+  1.00%	rand·*Rand·Int63n
+  1.00%	rand·*Rand·Intn
+
+After first fix:
+
+100 samples (avg 1 threads)
+ 52.00%	gongo·*board·markSurroundedChain
+ 11.00%	gongo·*board·playRandomGame
+  8.00%	gongo·*board·makeMove
+  5.00%	_div64by32
+  5.00%	gongo·*robot·findWins
+  3.00%	dodiv
+  3.00%	gongo·*board·wouldFillEye
+  3.00%	rand·*Rand·Int63
+  2.00%	rand·*Rand·Int63n
+  2.00%	rand·*rngSource·Int63
+  2.00%	syscall·Syscall
+  1.00%	gongo·*board·capture
+  1.00%	gongo·*board·copyFrom
+  1.00%	gongo·*board·hasLiberties
+  1.00%	runtime·int64mod
+
+100 samples (avg 1 threads)
+ 47.00%	gongo·*board·markSurroundedChain
+  8.00%	dodiv
+  8.00%	gongo·*board·makeMove
+  7.00%	gongo·*board·playRandomGame
+  4.00%	gongo·*board·wouldFillEye
+  4.00%	gongo·*robot·findWins
+  4.00%	rand·*Rand·Int63
+  3.00%	_div64by32
+  3.00%	gongo·*board·capture
+  3.00%	rand·*Rand·Int63n
+  3.00%	rand·*rngSource·Int63
+  3.00%	syscall·Syscall
+  1.00%	gongo·*board·getEasyScore
+  1.00%	gongo·*board·hasLiberties
+  1.00%	rand·*Rand·Intn
+
+----
+
+Converting struct field refs to local variables doesn't help (reverted):
+
+before:
+  5093,5364,5364
+  5106,5147,5224
+
+after:
+  4837,4875,4610
+  4833,4792,4960
+  4872,4875,4993
+
+Unrolling direction loop helps:
+
+after:
+  5893, 5825, 5933
+  5833, 5871, 5780
+
+$ 6prof -p 40068 -t 10 main
+100 samples (avg 1 threads)
+ 44.00%	gongo·*board·markSurroundedChain
+ 13.00%	dodiv
+  9.00%	_div64by32
+  6.00%	gongo·*robot·findWins
+  6.00%	syscall·Syscall
+  4.00%	gongo·*board·playRandomGame
+  4.00%	gongo·*board·wouldFillEye
+  3.00%	gongo·*board·makeMove
+  3.00%	rand·*Rand·Int63
+  2.00%	gongo·*board·capture
+  2.00%	rand·*Rand·Int63n
+  1.00%	gongo·*board·hasLiberties
+  1.00%	rand·*rngSource·Int63
+  1.00%	runtime·int64mod
+  1.00%	runtime·uint64mod
+
+Replacing if with switch helps:
+
+after:
+  5991, 6060, 6082
+  6006, 6183, 6195
+
+$ 6prof -p 40198 -t 10 main
+100 samples (avg 1 threads)
+ 31.00%	gongo·*board·markSurroundedChain
+ 14.00%	gongo·*board·playRandomGame
+ 12.00%	dodiv
+  8.00%	_div64by32
+  6.00%	rand·*rngSource·Int63
+  5.00%	_modv
+  5.00%	gongo·*board·makeMove
+  5.00%	gongo·*board·wouldFillEye
+  4.00%	gongo·*robot·findWins
+  4.00%	syscall·Syscall
+  2.00%	gongo·*board·hasLiberties
+  2.00%	rand·*Rand·Int63n
+  1.00%	gongo·*board·capture
+  1.00%	gongo·*board·getEasyScore
+
+$ 6prof -p 40198 -t 10 main
+100 samples (avg 1 threads)
+ 39.00%	gongo·*board·markSurroundedChain
+ 12.00%	gongo·*board·playRandomGame
+  9.00%	dodiv
+  8.00%	gongo·*board·makeMove
+  8.00%	gongo·*robot·findWins
+  4.00%	gongo·*board·getEasyScore
+  4.00%	gongo·*board·wouldFillEye
+  4.00%	rand·*rngSource·Int63
+  3.00%	runtime·uint64mod
+  2.00%	_div64by32
+  2.00%	rand·*Rand·Int63n
+  2.00%	syscall·Syscall
+  1.00%	gongo·*board·capture
+  1.00%	gongo·*board·hasLiberties
+  1.00%	rand·*Rand·Intn
+
+replacing array access to dirOffset with expressions helps:
+
+after:
+  6094, 6131, 6160
+  6138, 6145, 6158
+
+100 samples (avg 1 threads)
+ 40.00%	gongo·*board·markSurroundedChain
+ 19.00%	gongo·*board·playRandomGame
+  7.00%	_div64by32
+  7.00%	gongo·*board·makeMove
+
+100 samples (avg 1 threads)
+ 32.00%	gongo·*board·markSurroundedChain
+ 18.00%	gongo·*board·playRandomGame
+ 11.00%	gongo·*board·makeMove
+  8.00%	dodiv
+
+now using benchmark (50 moves):
+
+77 samples (avg 1 threads)
+ 35.06%	gongo·*board·markSurroundedChain
+ 19.48%	gongo·*board·playRandomGame
+  9.09%	gongo·*robot·findWins
+  6.49%	_div64by32
+  6.49%	gongo·*board·makeMove
+  6.49%	gongo·*board·wouldFillEye
+  5.19%	rand·*rngSource·Int63
+  2.60%	dodiv
+  2.60%	rand·*Rand·Int63
+  1.30%	_modv
+  1.30%	etext
+  1.30%	gongo·*board·capture
+  1.30%	gongo·*board·getEasyScore
+
+move pt variables first:
+
+after: 
+  6161, 6199, 6329
+  6220, 6195, 6284
+
+move cell accesses first - ok
+check all cells for empty first - better
+
+ 6440, 6420, 6489
+ 6376, 6393, 6471
+ 6317, 6263, 6303
+
+convert switches back to if statements:
+
+ 6396, 6240, 6378
+
+remove goto:
+
+ 6316, 6570, 6283
+ 6385, 6311, 6490
+
+77 samples (avg 1 threads)
+ 28.57%	gongo·*board·markSurroundedChain
+ 12.99%	gongo·*board·playRandomGame
+ 11.69%	gongo·*board·wouldFillEye
+  9.09%	dodiv
+  6.49%	gongo·*robot·findWins
+  5.19%	rand·*Rand·Int63
+  3.90%	_div64by32
+  3.90%	gongo·*board·makeMove
+  3.90%	rand·*Rand·Intn
+  2.60%	_modv
+  2.60%	rand·*rngSource·Int63
+  1.30%	etext
+  1.30%	gongo·*board·capture
+  1.30%	gongo·*board·copyFrom
+  1.30%	gongo·*board·getEasyScore
+  1.30%	rand·*Rand·Int63n
+  1.30%	runtime·uint64mod
+
+
+Javabot, for comparison:
+  6250, 6666, 6849
+  6849, 6329, 6756
+  6622, 6711, 6578
+
+Orego (another Java bot; different board data structure and algorithm), for comparison:
+  17218
+  16554
+  16784
+
+Changing the board cells from a slice to an array helps:
+  6471, 6448, 6463
+  6536, 6453, 6130
+
+Changing chainPoints from a slice to an array doesn't help:
+  6089, 6114, 6111 
+
+Making stride a constant makes it worse (reverted):
+  5653, 5739, 5889
+
+No difference if cells is moved to end of struct (reverted):
+  6444, 6340, 6308
+  6339, 6546, 6417
+
+Adding new int array makes it worse (reverted)
+Changing cell to int16 makes it worse (reverted)
+
+Using neighborCounts array for liberty-checking helps a lot:
+  7312, 7362, 7291
+  7148, 7388, 7418
+
+65 samples (avg 1 threads)
+ 18.46%	gongo·*board·makeMove
+ 18.46%	gongo·*board·playRandomGame
+ 16.92%	gongo·*board·markSurroundedChain
+  7.69%	_div64by32
+  7.69%	gongo·*board·wouldFillEye
+  7.69%	gongo·*robot·findWins
+  6.15%	dodiv
+  3.08%	rand·*Rand·Int63n
+  3.08%	rand·*rngSource·Int63
+  1.54%	_modvu
+  1.54%	etext
+  1.54%	gongo·*board·getFriendlyStone
+  1.54%	rand·*Rand·Int63
+  1.54%	rand·*Rand·Intn
+  1.54%	runtime·uint64mod
+
+Upgraded Go to tip. Here are the results (without neighbor counts) again:
+
+  6589, 6600, 6568, 6565
+  6648, 6749, 6636, 6480
+  6550, 6557, 6560, 6646
+
+Started using 3 games when benchmarking because otherwise
+the profiler results are too unstable:
+
+command:  6prof ./benchmark 50 3
+
+216 samples (avg 1 threads)
+ 36.11%	gongo·*board·markSurroundedChain
+  9.72%	dodiv
+  8.80%	gongo·*board·playRandomGame
+  8.33%	_div64by32
+  6.48%	gongo·*board·makeMove
+  5.56%	gongo·*robot·findWins
+  5.09%	gongo·*board·wouldFillEye
+  4.63%	rand·*rngSource·Int63
+  3.70%	rand·*Rand·Int63n
+  2.78%	runtime·uint64mod
+  1.85%	gongo·*board·getEasyScore
+  1.39%	gongo·*board·hasLiberties
+  1.39%	rand·*Rand·Int63
+  0.93%	gongo·*board·capture
+  0.46%	_modv
+  0.46%	_modvu
+  0.46%	bytes·*Buffer·Reset
+  0.46%	etext
+  0.46%	gongo·*board·copyFrom
+  0.46%	runtime·int64mod
+
+With neighbor counts, plus makeMove optimizations:
+
+7643, 7866, 7948
+7659, 7999, 7911
+7731, 7753, 7907
+
+177 samples (avg 1 threads)
+ 21.47%	gongo·*board·markSurroundedChain
+ 11.86%	gongo·*board·makeMove
+ 11.30%	dodiv
+  9.04%	_div64by32
+  9.04%	gongo·*board·playRandomGame
+  9.04%	gongo·*robot·findWins
+  6.78%	gongo·*board·wouldFillEye
+  3.95%	gongo·*board·capture
+  3.39%	rand·*Rand·Int63
+  3.39%	rand·*rngSource·Int63
+  2.82%	rand·*Rand·Int63n
+  1.69%	gongo·*board·getEasyScore
+  1.13%	_modv
+  1.13%	runtime·uint64mod
+  0.56%	_modvu
+  0.56%	etext
+  0.56%	gongo·*board·hasLiberties
+  0.56%	rand·*Rand·Intn
+  0.56%	runtime·int64mod
+  0.56%	syscall·Syscall
+
+Hmm... cumulative times point to 42% in Rand.Intn!
+
+6prof -hs ./benchmark 50 3
+
+180 samples (avg 1 threads)
+ 22.78%	 22.78%	gongo·*board·markSurroundedChain
+ 16.67%	 27.78%	dodiv
+ 11.11%	 11.11%	_div64by32
+  9.44%	 36.67%	gongo·*board·makeMove
+  6.11%	 96.11%	gongo·*robot·findWins
+  6.11%	 89.44%	gongo·*board·playRandomGame
+  6.11%	  9.44%	rand·*Rand·Int63
+  4.44%	  4.44%	gongo·*board·wouldFillEye
+  3.89%	  3.89%	rand·*rngSource·Int63
+  3.33%	 20.56%	gongo·*board·capture
+  2.78%	 15.56%	_modv
+  1.67%	 41.67%	rand·*Rand·Int63n
+  1.11%	 15.00%	_modvu
+  1.11%	  6.67%	gongo·*board·hasLiberties
+  1.11%	  1.11%	gongo·*board·getEasyScore
+  0.56%	 42.22%	rand·*Rand·Intn
+  0.56%	 15.00%	runtime·uint64mod
+  0.00%	 96.11%	goexit
+  0.00%	 96.11%	gongo·*robot·GenMove
+  0.00%	 96.11%	mainstart
+  0.00%	 96.11%	main·main
+  0.00%	 15.56%	runtime·int64mod
+  0.00%	  0.56%	MHeap_LookupMaybe
+  0.00%	  0.56%	etext
+  0.00%	  0.56%	os·*File·Write
+  0.00%	  0.56%	syscall·Syscall
+  0.00%	  0.56%	syscall·Write
+
+Typical strack traces:
+
+rand·*rngSource·Int63()+0x80 
+rand·*Rand·Int63()+0x36 
+rand·*Rand·Int63n()+0x88 
+rand·*Rand·Intn()+0x33 
+gongo·*board·playRandomGame()+0x140 
+gongo·*robot·findWins()+0xe4 
+gongo·*robot·GenMove()+0x10c 
+main·main()+0x1a2 
+mainstart()+0xf 
+
+dodiv()+0x1a3 
+_modv()+0xa8 
+runtime·int64mod()+0x46 
+rand·*Rand·Int63n()+0xd4 
+rand·*Rand·Intn()+0x33 
+gongo·*board·playRandomGame()+0x140 
+gongo·*robot·findWins()+0xe4 
+gongo·*robot·GenMove()+0x10c 
+main·main()+0x1a2 
+mainstart()+0xf 
+
+Reimplement randomness to avoid slow division for big win:
+  10095 10298 10216
+   9893    9831 10269
+   9882    9591 10126
+
+147 samples (avg 1 threads)
+ 29.93%	 29.93%	gongo·*board·markSurroundedChain
+ 21.77%	 52.38%	gongo·*board·makeMove
+ 15.65%	 88.44%	gongo·*board·playRandomGame
+  8.84%	 12.24%	gongo·*randomness·Intn
+  8.84%	  8.84%	gongo·*board·wouldFillEye
+  8.16%	 96.60%	gongo·*robot·findWins
+  3.40%	  3.40%	rand·*rngSource·Int63
+  1.36%	  1.36%	gongo·*board·getEasyScore
+  0.68%	  8.16%	gongo·*board·hasLiberties
+  0.00%	 96.60%	goexit
+  0.00%	 96.60%	gongo·*robot·GenMove
+  0.00%	 96.60%	mainstart
+  0.00%	 96.60%	main·main
+  0.00%	 22.45%	gongo·*board·capture
+  0.00%	  0.68%	MHeap_LookupMaybe
+  0.00%	  0.68%	etext
+  0.00%	  0.68%	os·*File·Write
+
+Timed some other programs:
+
+plug-and-go:   14,705   - 500000 playouts in 34 seconds
+CRef bot (no opt) 5,882  - 100000 playouts in 17 seconds
+CRef bot (-O3)   12,500 
+
+Oops, forgot to use -server
+
+
+plug-and-go 17,857 - 500000 in 28 seconds
+Jrefbot 10,000     - 500000 in 50 seconds
